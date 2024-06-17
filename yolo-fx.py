@@ -69,12 +69,14 @@ def relay_stream():
                 '-r', '30',  # Change this to your stream's frame rate
                 '-i', '-',
                 '-c:v', 'libx264',
+                '-preset', 'ultrafast',
                 '-pix_fmt', 'yuv420p',
                 '-f', 'rtsp',
                 '-rtsp_transport', 'tcp',
                 output_rtsp
             ],
-            stdin=subprocess.PIPE
+            stdin=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
     except Exception as e:
         logging.error(f"Failed to start FFmpeg process: {e}")
@@ -93,6 +95,10 @@ def relay_stream():
         except Exception as e:
             spinner.fail("An error occurred while relaying frames")
             logging.error(f"Error: {e}")
+        finally:
+            stdout, stderr = process.communicate()
+            logging.error(f"FFmpeg stdout: {stdout}")
+            logging.error(f"FFmpeg stderr: {stderr}")
 
     logging.info("FFmpeg relay process completed")
 
