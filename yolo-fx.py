@@ -77,4 +77,36 @@ def relay_stream():
             stdin=subprocess.PIPE
         )
     except Exception as e:
-       
+        logging.error(f"Failed to start FFmpeg process: {e}")
+        return
+
+    with yaspin(Spinners.dots, text="Relaying processed frames...") as spinner:
+        try:
+            for frame in process_stream():
+                process.stdin.write(frame.tobytes())
+            process.stdin.close()
+            process.wait()
+            spinner.ok("Relaying done.")
+        except BrokenPipeError as e:
+            spinner.fail("Broken pipe error occurred")
+            logging.error(f"Broken pipe error: {e}")
+        except Exception as e:
+            spinner.fail("An error occurred while relaying frames")
+            logging.error(f"Error: {e}")
+
+    logging.info("FFmpeg relay process completed")
+
+# Start the processing and relaying in a separate thread
+relay_thread = threading.Thread(target=relay_stream)
+logging.info("Starting relay thread")
+relay_thread.start()
+
+# Keep the main thread running
+try:
+    while True:
+        pass
+except KeyboardInterrupt:
+    logging.info("Shutting down gracefully")
+    cap.release()
+    relay_thread.join()
+    logging.info("Shutdown complete")
