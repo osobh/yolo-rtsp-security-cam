@@ -66,7 +66,7 @@ def relay_stream():
                 '-f', 'rawvideo',
                 '-pix_fmt', 'bgr24',
                 '-s', '640x480',  # Change this to your stream's resolution
-                '-r', '30',  # Change this to your stream's frame rate
+                '-r', '15',  # Change the frame rate to a lower value
                 '-i', '-',
                 '-c:v', 'libx264',
                 '-preset', 'ultrafast',
