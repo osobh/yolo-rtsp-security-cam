@@ -71,6 +71,7 @@ def relay_stream():
                 '-c:v', 'libx264',
                 '-preset', 'ultrafast',
                 '-pix_fmt', 'yuv420p',
+                '-b:v', '1M',  # Lower the bitrate
                 '-f', 'rtsp',
                 '-rtsp_transport', 'tcp',
                 output_rtsp
