@@ -1,8 +1,14 @@
 import cv2
 import numpy as np
 import threading
+import logging
 from ultralytics import YOLO
 import subprocess
+from yaspin import yaspin
+from yaspin.spinners import Spinners
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Variables for YOLO detection
 model = YOLO("yolov8n.pt")
@@ -34,16 +40,21 @@ def process_yolo(frame):
 
 # Function to read frames from the RTSP stream and process them
 def process_stream():
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Failed to grab frame")
-            break
-        processed_frame = process_yolo(frame)
-        yield processed_frame
+    logging.info("Starting to process the stream")
+    with yaspin(Spinners.bouncingBall, text="Processing frames...") as spinner:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                spinner.fail("Failed to grab frame")
+                logging.error("Failed to grab frame")
+                break
+            processed_frame = process_yolo(frame)
+            yield processed_frame
+        spinner.ok("Processing frames done.")
 
 # Function to relay the processed stream using FFmpeg
 def relay_stream():
+    logging.info("Starting FFmpeg relay process")
     process = subprocess.Popen(
         [
             'ffmpeg',
@@ -62,14 +73,18 @@ def relay_stream():
         stdin=subprocess.PIPE
     )
 
-    for frame in process_stream():
-        process.stdin.write(frame.tobytes())
+    with yaspin(Spinners.dots, text="Relaying processed frames...") as spinner:
+        for frame in process_stream():
+            process.stdin.write(frame.tobytes())
+        process.stdin.close()
+        process.wait()
+        spinner.ok("Relaying done.")
 
-    process.stdin.close()
-    process.wait()
+    logging.info("FFmpeg relay process completed")
 
 # Start the processing and relaying in a separate thread
 relay_thread = threading.Thread(target=relay_stream)
+logging.info("Starting relay thread")
 relay_thread.start()
 
 # Keep the main thread running
@@ -77,5 +92,7 @@ try:
     while True:
         pass
 except KeyboardInterrupt:
+    logging.info("Shutting down gracefully")
     cap.release()
     relay_thread.join()
+    logging.info("Shutdown complete")
