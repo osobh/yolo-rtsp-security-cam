@@ -20,7 +20,7 @@ thickness = 1
 
 # RTSP stream URLs
 rtsp_stream = "rtsp://192.168.68.67:8554/cam"
-output_rtsp = "rtsp://localhost:8554/mystream"
+output_rtsp = "rtsp://192.168.68.77:8554/mystream"
 
 # Set up video capture
 cap = cv2.VideoCapture(rtsp_stream)
